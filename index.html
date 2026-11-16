@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tattarrattat — Interactive Mirror</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    { "imports": {
+        "three": "./lib/three/three.module.js",
+        "three/addons/": "./lib/three/addons/"
+    } }
+  </script>
+</head>
+<body>
+  <video id="cam" playsinline muted></video>
+  <canvas id="stage"></canvas>
+  <canvas id="debug"></canvas>
+
+  <header class="brand">
+    <span class="mark">TATTARRATTAT</span>
+    <span class="sub">the mirror that dresses you back</span>
+  </header>
+
+  <div id="item" class="item hidden">
+    <div class="item-kicker">Now wearing</div>
+    <div id="item-name" class="item-name"></div>
+    <div id="dots" class="dots"></div>
+  </div>
+
+  <div id="hint" class="hint hidden"><span class="hand">👋</span> Raise a hand and wave to change your look</div>
+  <div id="wave-meter" class="wave-meter hidden"><div id="wave-fill"></div></div>
+  <div id="status" class="status hidden"></div>
+
+  <div id="start" class="start">
+    <h1>Step in front of the mirror</h1>
+    <p>We'll turn on your camera and track your face.<br/>Wave a hand to switch looks.</p>
+    <button id="start-btn">Start mirror</button>
+    <p class="small">Keys: → next look · F fullscreen · H show head volume · [ ] glasses size · - = glasses height · 0 reset</p>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
