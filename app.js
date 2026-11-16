@@ -1,4 +1,4 @@
-// Tattarrattat — interactive mirror (v5: Ray-Ban Wayfarer + Aviator + Browline)
+// Interactive mirror (v4: Ray-Ban Wayfarer + Aviator)
 //
 // Method (MediaPipe 3D Face Transform): both accessories are placed once on MediaPipe's *canonical face model*
 // (a reference face in centimetres). Every frame the face pose (rotation from the facial transformation matrix,
@@ -19,7 +19,6 @@ const MODELS = {
 const LOOKS = [
   { name: 'Ray-Ban Wayfarer', glasses: 'wayfarer' },
   { name: 'Aviator Sunglasses', glasses: 'aviator' },
-  { name: 'Browline Sunglasses', glasses: 'browline' },
 ];
 const WAVE = { swings: 3, windowMs: 1600, cooldownMs: 1300 };
 
@@ -42,13 +41,6 @@ const FITS = {
     modelEye: new THREE.Vector3(0, -0.12, 0.25),      // lens centres are at y -0.15; pupils sit just above, as with real aviators
     faceEye: new THREE.Vector3(0, 2.62, 5.45),        // metal frames ride ~1 mm further out on their nose pads
     hinge: { y: -0.02, z: 0.26 },
-    isTemple: (n) => /Temple/.test(n),
-  },
-  browline: {
-    cmPerUnit: 1.8,                                  // Browline units -> cm: 2.81 u lens width ≈ 51 mm; 7.84 u ≈ 14.1 cm overall
-    modelEye: new THREE.Vector3(0, -0.8, 0),          // lens centres at y -0.94; pupils sit a little above, under the brow bar
-    faceEye: new THREE.Vector3(0, 2.62, 5.8),         // nose pads rest on the sides of the nose, lenses ~2 cm in front of the eyes
-    hinge: { y: 0.1, z: -0.5 },
     isTemple: (n) => /Temple/.test(n),
   },
 };
@@ -126,7 +118,7 @@ const b64 = (s, T) => { const bin = atob(s), u = new Uint8Array(bin.length); for
 
 // ---------------------------------------------------------------- assets
 let canon = null, faceOcc = null, skullOcc = null;
-const frames = {};   // wayfarer / aviator / browline groups (canonical face space)
+const frames = {};   // wayfarer / aviator groups (canonical face space)
 const occMat = new THREE.MeshBasicMaterial({ colorWrite: false, side: THREE.DoubleSide });
 const debugMat = new THREE.MeshBasicMaterial({ color: 0xd9a58a, side: THREE.DoubleSide, transparent: true, opacity: 0.85 });
 
@@ -160,22 +152,6 @@ async function loadAssets() {
     envMapIntensity: 1.7, side: THREE.DoubleSide });
   av.traverse((c) => { if (c.isMesh) { const lens = /Lens/i.test(c.material.name); c.material = lens ? avLens : avFrame; c.frustumCulled = false; c.renderOrder = lens ? 2 : 0; } });
   frames.aviator = wrap(av, FITS.aviator);
-
-  // ---- Browline (clubmaster style): glossy dark-tortoise brow bar, gold metal rims, bridge and arms,
-  // brown gradient-style lenses (tinted transparent so the live video shows through).
-  const bl = (await new GLTFLoader().loadAsync('./assets/browline.glb')).scene;
-  const blBrow = new THREE.MeshPhysicalMaterial({ color: 0x2a1a12, roughness: 0.18, clearcoat: 1, clearcoatRoughness: 0.06, side: THREE.DoubleSide });
-  const blGold = new THREE.MeshStandardMaterial({ color: 0xd2b27a, metalness: 1, roughness: 0.24, envMapIntensity: 1.3, side: THREE.DoubleSide });
-  const blPads = new THREE.MeshPhysicalMaterial({ color: 0xe8e2d8, roughness: 0.3, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
-  const blLens = new THREE.MeshPhysicalMaterial({ color: 0x3b2416, metalness: 0.4, roughness: 0.03, transparent: true, opacity: 0.82,
-    envMapIntensity: 1.6, side: THREE.DoubleSide });
-  bl.traverse((c) => {
-    if (!c.isMesh) return;
-    const n = c.name;
-    c.material = /Lens/.test(n) ? blLens : /Brow/.test(n) ? blBrow : /NosePads/.test(n) ? blPads : blGold;
-    c.frustumCulled = false; c.renderOrder = /Lens/.test(n) ? 2 : 0;
-  });
-  frames.browline = wrap(bl, FITS.browline);
 
   // ---- occluders: your live face mesh (vertices = landmarks each frame) + skull volume behind it
   const fg = new THREE.BufferGeometry();
@@ -374,7 +350,7 @@ let faceLm = null, poseLm = null, lastVideoTime = -1, injected = null, tick = 0;
 function loop() {
   const now = performance.now();
   pop = Math.min(1, pop + 0.06);
-  if (canon && frames.browline) {
+  if (canon && frames.aviator) {
     if (injected) frame(injected.F, injected.M, injected.P, now);
     else if (faceLm && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
       lastVideoTime = video.currentTime;
@@ -428,11 +404,11 @@ addEventListener('keydown', (e) => {
   else if (k === '-' || k === '=') tweak.glassesY += k === '=' ? 0.15 : -0.15;
   else if (k === '0') Object.assign(tweak, TWEAK_DEFAULT);
   else return;
-  saveTweak(); if (frames.browline) applyFits();
+  saveTweak(); if (frames.aviator) applyFits();
 });
 
 // automated-render hook (no effect in normal use)
-window.__mirror = { trusted: () => matrixTrusted, inject: (F, M, P) => { injected = F || P ? { F, M, P } : null; }, setLook, ready: () => !!(canon && frames.browline), showHead: (v) => { showHead = v; } };
+window.__mirror = { trusted: () => matrixTrusted, inject: (F, M, P) => { injected = F || P ? { F, M, P } : null; }, setLook, ready: () => !!(canon && frames.aviator), showHead: (v) => { showHead = v; } };
 
 const assetsReady = loadAssets().catch((e) => { console.error(e); status('Could not load the 3D models: ' + e.message); });
 requestAnimationFrame(loop);
